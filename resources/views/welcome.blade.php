@@ -17,7 +17,7 @@
         [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen antialiased selection:bg-amber-400 selection:text-slate-950" x-data="{ modalOpen: false, modalProject: {} }">
+<body class="bg-slate-50 text-slate-800 min-h-screen antialiased selection:bg-amber-400 selection:text-slate-950">
 
     <!-- НАВИГАЦИЯ -->
     <nav class="border-b border-slate-200 bg-white/90 backdrop-blur-md sticky top-0 z-40">
@@ -194,30 +194,17 @@
                             </h3>
                             
                             <p class="text-slate-600 text-sm sm:text-base leading-relaxed whitespace-pre-line mb-6 font-normal">
-                                {{ Str::limit($project->description, 200) }}
+                                {{ $project->description }}
                             </p>
                         </div>
 
-                        <div class="flex items-center gap-4">
-                            <button 
-                                @click="modalProject = { 
-                                    title: '{{ addslashes($project->title) }}', 
-                                    sphere: '{{ $project->sphere }}', 
-                                    year: '{{ $project->year }}', 
-                                    description: '{{ addslashes($project->description) }}',
-                                    url: '{{ $project->project_url }}',
-                                    image: '{{ $project->cover_image ? asset('storage/' . $project->cover_image) : '' }}'
-                                }; modalOpen = true"
-                                class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-950 bg-slate-100 hover:bg-amber-400 px-4 py-2.5 rounded-lg border border-slate-200 hover:border-amber-400 transition-all">
-                                Быстрый просмотр
-                            </button>
-
-                            @if($project->project_url)
-                                <a href="{{ $project->project_url }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-600 hover:text-amber-700">
+                        @if($project->project_url)
+                            <div>
+                                <a href="{{ $project->project_url }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider bg-amber-400 hover:bg-amber-500 text-slate-950 px-5 py-2.5 rounded-lg transition-all duration-200 shadow-sm">
                                     Перейти на сайт <span>→</span>
                                 </a>
-                            @endif
-                        </div>
+                            </div>
+                        @endif
                     </div>
 
                 </article>
@@ -229,51 +216,6 @@
         </div>
 
     </main>
-
-    <!-- МОДАЛЬНОЕ ОКНО -->
-    <div 
-        x-show="modalOpen" 
-        x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm"
-        x-transition:enter="transition ease-out duration-200"
-        x-transition:enter-start="opacity-0"
-        x-transition:enter-end="opacity-100"
-        x-transition:leave="transition ease-in duration-150"
-        x-transition:leave-start="opacity-100"
-        x-transition:leave-end="opacity-0">
-        
-        <div 
-            @click.away="modalOpen = false" 
-            class="bg-white rounded-2xl max-w-3xl w-full p-6 sm:p-8 border-t-4 border-amber-400 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            
-            <button @click="modalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-800 text-xl font-bold p-2">✕</button>
-
-            <div class="flex items-center gap-2 mb-4">
-                <span class="bg-amber-400/20 text-slate-900 text-xs font-bold uppercase px-3 py-1 rounded-md" x-text="modalProject.sphere"></span>
-                <span class="bg-slate-100 text-slate-600 text-xs font-semibold uppercase px-3 py-1 rounded-md" x-text="modalProject.year"></span>
-            </div>
-
-            <h3 class="font-serif-title text-2xl sm:text-3xl font-bold text-slate-900 mb-6" x-text="modalProject.title"></h3>
-
-            <template x-if="modalProject.image">
-                <img :src="modalProject.image" class="w-full h-64 sm:h-80 object-cover rounded-xl border border-slate-200 mb-6">
-            </template>
-
-            <p class="text-slate-700 text-base leading-relaxed whitespace-pre-line mb-8 font-normal" x-text="modalProject.description"></p>
-
-            <div class="flex justify-between items-center border-t border-slate-100 pt-6">
-                <button @click="modalOpen = false" class="text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-800">
-                    Закрыть
-                </button>
-
-                <template x-if="modalProject.url">
-                    <a :href="modalProject.url" target="_blank" class="bg-amber-400 hover:bg-amber-500 text-slate-950 text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-lg transition shadow-sm">
-                        Открыть проект →
-                    </a>
-                </template>
-            </div>
-        </div>
-    </div>
 
     <!-- ФУТЕР -->
     <footer class="border-t border-slate-200 py-10 bg-white text-center text-slate-500 text-xs uppercase tracking-widest font-medium">
