@@ -26,3 +26,6 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 !/storage/app/public/projects
+# Разрешаем отслеживать базу данных и скачанные картинки в Git
+!database/database.sqlite
+!storage/app/public/projects/*
