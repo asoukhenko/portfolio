@@ -1,12 +1,16 @@
 <?php
 
 use App\Models\Project;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    $projects = Project::orderBy('year', 'desc')->get();
-    $spheres = Project::select('sphere')->distinct()->pluck('sphere');
-    $years = Project::select('year')->distinct()->orderBy('year', 'desc')->pluck('year');
+    $projects = Project::latest()->get();
+    $spheres = Project::pluck('sphere')->unique()->filter()->values();
+    $years = Project::pluck('year')->unique()->filter()->values();
+    
+    // Получаем все настройки в формате ['key' => 'value']
+    $settings = Setting::pluck('value', 'key')->all();
 
-    return view('welcome', compact('projects', 'spheres', 'years'));
+    return view('welcome', compact('projects', 'spheres', 'years', 'settings'));
 });
