@@ -16,7 +16,7 @@ class ProjectResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
     protected static ?string $navigationLabel = 'Проекты';
-    protected static ?string $modelLabel = 'Проект';
+    protected static ?string $modelLabel = 'проект';
     protected static ?string $pluralModelLabel = 'Проекты';
 
     public static function form(Form $form): Form
@@ -41,6 +41,7 @@ class ProjectResource extends Resource
 
                 Forms\Components\FileUpload::make('cover_image')
                     ->image()
+                    ->disk('public')
                     ->directory('projects')
                     ->label('Обложка проекта'),
 
