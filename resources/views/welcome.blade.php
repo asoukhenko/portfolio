@@ -105,21 +105,17 @@
         ">
         
         <!-- Заголовок и фильтры -->
-        <div class="mb-12 border-b border-slate-200 pb-8">
-            <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
-                <div>
-                    <h2 class="font-serif-title text-3xl text-slate-900 font-semibold">
-                        {{ $settings['cases_title'] ?? 'Избранные кейсы' }}
-                    </h2>
-                    <p class="text-sm text-slate-500 mt-1">
-                        {{ $settings['cases_subtitle'] ?? 'Реализованные проекты, задачи и бизнес-результаты' }}
-                    </p>
-                </div>
-                <!-- Счётчик загруженных проектов -->
-                <div class="text-xs text-slate-500 font-medium bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm self-start md:self-auto">
-                    Показано: <span x-text="visibleProjects.length" class="font-bold text-slate-900"></span> из <span x-text="filteredProjects.length" class="font-bold text-slate-900"></span> проектов
-                </div>
-            </div>
+<div class="mb-12 border-b border-slate-200 pb-8">
+    
+    <!-- Чистый заголовок без счётчика и лишних flex-классов -->
+    <div class="mb-8">
+        <h2 class="font-serif-title text-3xl text-slate-900 font-semibold">
+            {{ $settings['cases_title'] ?? 'Избранные кейсы' }}
+        </h2>
+        <p class="text-sm text-slate-500 mt-1">
+            {{ $settings['cases_subtitle'] ?? 'Реализованные проекты, задачи и бизнес-результаты' }}
+        </p>
+    </div>
 
             <!-- Интерактивные фильтры -->
             <div class="space-y-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm">
