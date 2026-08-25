@@ -94,8 +94,15 @@
         </div>
     </header>
 
-    <!-- РАЗДЕЛ С ПРОЕКТАМИ -->
-    <main class="max-w-6xl mx-auto px-6 py-16" x-data="{ selectedSphere: 'all', selectedYear: 'all' }">
+    <!-- РАЗДЕЛ С ПРОЕКТАМИ И ЛЕНИВОЙ ПОДГРУЗКОЙ -->
+    <main 
+        class="max-w-6xl mx-auto px-6 py-16" 
+        x-data="portfolioApp"
+        @scroll.window.debounce.150ms="
+            if ((window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 700)) {
+                loadMore();
+            }
+        ">
         
         <!-- Заголовок и фильтры -->
         <div class="mb-12 border-b border-slate-200 pb-8">
@@ -108,6 +115,10 @@
                         {{ $settings['cases_subtitle'] ?? 'Реализованные проекты, задачи и бизнес-результаты' }}
                     </p>
                 </div>
+                <!-- Счётчик загруженных проектов -->
+                <div class="text-xs text-slate-500 font-medium bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm self-start md:self-auto">
+                    Показано: <span x-text="visibleProjects.length" class="font-bold text-slate-900"></span> из <span x-text="filteredProjects.length" class="font-bold text-slate-900"></span> проектов
+                </div>
             </div>
 
             <!-- Интерактивные фильтры -->
@@ -116,15 +127,15 @@
                 <div class="flex flex-wrap items-center gap-2">
                     <span class="text-xs font-bold uppercase tracking-wider text-slate-400 mr-2 min-w-[60px]">Сфера:</span>
                     <button 
-                        @click="selectedSphere = 'all'" 
+                        @click="setSphere('all')" 
                         :class="selectedSphere === 'all' ? 'bg-amber-400 text-slate-950 font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium'"
                         class="px-3.5 py-1.5 text-xs rounded-lg transition-all duration-200">
                         Все сферы
                     </button>
                     @foreach($spheres as $sphere)
                     <button 
-                        @click="selectedSphere = '{{ $sphere }}'" 
-                        :class="selectedSphere === '{{ $sphere }}' ? 'bg-amber-400 text-slate-950 font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium'"
+                        @click="setSphere('{{ addslashes($sphere) }}')" 
+                        :class="selectedSphere === '{{ addslashes($sphere) }}' ? 'bg-amber-400 text-slate-950 font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium'"
                         class="px-3.5 py-1.5 text-xs rounded-lg transition-all duration-200">
                         {{ $sphere }}
                     </button>
@@ -135,14 +146,14 @@
                 <div class="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
                     <span class="text-xs font-bold uppercase tracking-wider text-slate-400 mr-2 min-w-[60px]">Год:</span>
                     <button 
-                        @click="selectedYear = 'all'" 
+                        @click="setYear('all')" 
                         :class="selectedYear === 'all' ? 'bg-amber-400 text-slate-950 font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium'"
                         class="px-3.5 py-1.5 text-xs rounded-lg transition-all duration-200">
                         Все года
                     </button>
                     @foreach($years as $year)
                     <button 
-                        @click="selectedYear = '{{ $year }}'" 
+                        @click="setYear('{{ $year }}')" 
                         :class="selectedYear === '{{ $year }}' ? 'bg-amber-400 text-slate-950 font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium'"
                         class="px-3.5 py-1.5 text-xs rounded-lg transition-all duration-200">
                         {{ $year }}
@@ -154,26 +165,31 @@
 
         <!-- КАРТОЧКИ КЕЙСОВ -->
         <div class="space-y-10">
-            @forelse($projects as $project)
+            <template x-for="project in visibleProjects" :key="project.id">
                 <article 
-                    x-show="(selectedSphere === 'all' || selectedSphere === '{{ $project->sphere }}') && (selectedYear === 'all' || selectedYear === '{{ $project->year }}')"
                     x-transition:enter="transition ease-out duration-300"
-                    x-transition:enter-start="opacity-0 translate-y-2"
+                    x-transition:enter-start="opacity-0 translate-y-4"
                     x-transition:enter-end="opacity-100 translate-y-0"
                     class="group bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-amber-400/60 transition-all duration-300 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative overflow-hidden">
                     
                     <div class="w-3 h-3 bg-amber-400 absolute top-0 right-0"></div>
 
-                    <!-- Картинка -->
+                    <!-- Картинка с ленивой загрузкой -->
                     <div class="lg:col-span-5 order-2 lg:order-1">
                         <div class="aspect-[4/3] rounded-xl overflow-hidden relative border border-slate-200 bg-slate-100">
-                            @if($project->cover_image)
-                                <img src="{{ asset('storage/' . $project->cover_image) }}" alt="{{ $project->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out">
-                            @else
+                            <template x-if="project.cover_image">
+                                <img 
+                                    :src="'/storage/' + project.cover_image" 
+                                    :alt="project.title" 
+                                    loading="lazy"
+                                    decoding="async"
+                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out">
+                            </template>
+                            <template x-if="!project.cover_image">
                                 <div class="w-full h-full flex items-center justify-center text-slate-400 bg-slate-100">
                                     <span class="font-serif-title italic text-sm">Без обложки</span>
                                 </div>
-                            @endif
+                            </template>
                         </div>
                     </div>
 
@@ -181,41 +197,86 @@
                     <div class="lg:col-span-7 order-1 lg:order-2 flex flex-col justify-between h-full">
                         <div>
                             <div class="flex items-center gap-2 mb-4">
-                                <span class="bg-amber-400/15 text-slate-900 border border-amber-400/30 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md">
-                                    {{ $project->sphere }}
-                                </span>
-                                <span class="bg-slate-100 text-slate-600 border border-slate-200 text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md">
-                                    {{ $project->year }}
-                                </span>
+                                <span x-text="project.sphere" class="bg-amber-400/15 text-slate-900 border border-amber-400/30 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md"></span>
+                                <span x-text="project.year" class="bg-slate-100 text-slate-600 border border-slate-200 text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md"></span>
                             </div>
                             
-                            <h3 class="font-serif-title text-2xl sm:text-3xl text-slate-900 font-semibold mb-4 group-hover:text-amber-600 transition-colors">
-                                {{ $project->title }}
-                            </h3>
+                            <h3 x-text="project.title" class="font-serif-title text-2xl sm:text-3xl text-slate-900 font-semibold mb-4 group-hover:text-amber-600 transition-colors"></h3>
                             
-                            <p class="text-slate-600 text-sm sm:text-base leading-relaxed whitespace-pre-line mb-6 font-normal">
-                                {{ $project->description }}
-                            </p>
+                            <p x-text="project.description" class="text-slate-600 text-sm sm:text-base leading-relaxed whitespace-pre-line mb-6 font-normal"></p>
                         </div>
 
-                        @if($project->project_url)
+                        <template x-if="project.project_url">
                             <div>
-                                <a href="{{ $project->project_url }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider bg-amber-400 hover:bg-amber-500 text-slate-950 px-5 py-2.5 rounded-lg transition-all duration-200 shadow-sm">
+                                <a :href="project.project_url" target="_blank" rel="noopener" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider bg-amber-400 hover:bg-amber-500 text-slate-950 px-5 py-2.5 rounded-lg transition-all duration-200 shadow-sm">
                                     Перейти на сайт <span>→</span>
                                 </a>
                             </div>
-                        @endif
+                        </template>
                     </div>
 
                 </article>
-            @empty
-                <div class="py-12 text-center text-slate-400 font-serif-title italic bg-white rounded-2xl border border-dashed border-slate-200">
-                    Проекты не найдены.
-                </div>
-            @endforelse
+            </template>
+
+            <!-- Сообщение, если ничего не найдено -->
+            <div x-show="filteredProjects.length === 0" x-cloak class="py-12 text-center text-slate-400 font-serif-title italic bg-white rounded-2xl border border-dashed border-slate-200">
+                Проекты по выбранным фильтрам не найдены.
+            </div>
+        </div>
+
+        <!-- ИНДИКАТОР ЛЕНИВОЙ ПОДГРУЗКИ ПРИ СКРОЛЛЕ -->
+        <div x-show="visibleLimit < filteredProjects.length" class="text-center pt-12">
+            <button @click="loadMore()" class="inline-flex items-center gap-3 px-6 py-3 bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs uppercase tracking-wider rounded-xl border border-slate-200 shadow-sm transition-all duration-200 cursor-pointer">
+                <svg class="animate-spin h-4 w-4 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Подгружаем еще проекты...
+            </button>
         </div>
 
     </main>
+
+    <!-- СНИППЕТ С КЛИЕНТСКОЙ ЛОГИКОЙ ALPINE -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('portfolioApp', () => ({
+                projects: @json($projects),
+                selectedSphere: 'all',
+                selectedYear: 'all',
+                visibleLimit: 6,
+                step: 6,
+
+                get filteredProjects() {
+                    return this.projects.filter(p => {
+                        const matchSphere = this.selectedSphere === 'all' || p.sphere === this.selectedSphere;
+                        const matchYear = this.selectedYear === 'all' || String(p.year) === String(this.selectedYear);
+                        return matchSphere && matchYear;
+                    });
+                },
+
+                get visibleProjects() {
+                    return this.filteredProjects.slice(0, this.visibleLimit);
+                },
+
+                setSphere(sphere) {
+                    this.selectedSphere = sphere;
+                    this.visibleLimit = this.step;
+                },
+
+                setYear(year) {
+                    this.selectedYear = year;
+                    this.visibleLimit = this.step;
+                },
+
+                loadMore() {
+                    if (this.visibleLimit < this.filteredProjects.length) {
+                        this.visibleLimit += this.step;
+                    }
+                }
+            }));
+        });
+    </script>
 
     <!-- ФУТЕР -->
     <footer class="border-t border-slate-200 py-10 bg-white text-center text-slate-500 text-xs uppercase tracking-widest font-medium">
