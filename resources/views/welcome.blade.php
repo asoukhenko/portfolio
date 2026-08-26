@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $settings['site_name'] ?? 'Александра' }} — {{ $settings['site_role'] ?? 'Head of Web Dev & Senior PM' }}</title>
+    <title>{{ $settings['site_name'] ?? 'Александра Сухенко' }} — {{ $settings['site_role'] ?? 'Head of Web Dev & Senior PM' }}</title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
     <!-- Tailwind CSS & Alpine.js -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -15,6 +16,8 @@
         body { font-family: 'Inter', sans-serif; }
         .font-serif-title { font-family: 'Lora', serif; }
         [x-cloak] { display: none !important; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen antialiased selection:bg-amber-400 selection:text-slate-950">
@@ -105,17 +108,15 @@
         ">
         
         <!-- Заголовок и фильтры -->
-<div class="mb-12 border-b border-slate-200 pb-8">
-    
-    <!-- Чистый заголовок без счётчика и лишних flex-классов -->
-    <div class="mb-8">
-        <h2 class="font-serif-title text-3xl text-slate-900 font-semibold">
-            {{ $settings['cases_title'] ?? 'Избранные кейсы' }}
-        </h2>
-        <p class="text-sm text-slate-500 mt-1">
-            {{ $settings['cases_subtitle'] ?? 'Реализованные проекты, задачи и бизнес-результаты' }}
-        </p>
-    </div>
+        <div class="mb-12 border-b border-slate-200 pb-8">
+            <div class="mb-8">
+                <h2 class="font-serif-title text-3xl text-slate-900 font-semibold">
+                    {{ $settings['cases_title'] ?? 'Избранные кейсы' }}
+                </h2>
+                <p class="text-sm text-slate-500 mt-1">
+                    {{ $settings['cases_subtitle'] ?? 'Реализованные проекты, задачи и бизнес-результаты' }}
+                </p>
+            </div>
 
             <!-- Интерактивные фильтры -->
             <div class="space-y-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm">
@@ -166,45 +167,195 @@
                     x-transition:enter="transition ease-out duration-300"
                     x-transition:enter-start="opacity-0 translate-y-4"
                     x-transition:enter-end="opacity-100 translate-y-0"
-                    class="group bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-amber-400/60 transition-all duration-300 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative overflow-hidden">
+                    class="group bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-amber-400/60 transition-all duration-300 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative overflow-hidden"
+                    x-data="{
+                        modalIndex: null,
+                        get allImages() {
+                            let list = [];
+                            if (project.cover_image) list.push(project.cover_image);
+                            if (project.gallery && Array.isArray(project.gallery)) {
+                                list = list.concat(project.gallery);
+                            }
+                            return list;
+                        },
+                        openModal(idx) { this.modalIndex = idx; },
+                        closeModal() { this.modalIndex = null; },
+                        nextModal() {
+                            if (this.modalIndex !== null && this.allImages.length > 0) {
+                                this.modalIndex = (this.modalIndex + 1) % this.allImages.length;
+                            }
+                        },
+                        prevModal() {
+                            if (this.modalIndex !== null && this.allImages.length > 0) {
+                                this.modalIndex = (this.modalIndex - 1 + this.allImages.length) % this.allImages.length;
+                            }
+                        },
+                        scrollGallery(dir) {
+                            if (this.$refs.galleryStrip) {
+                                this.$refs.galleryStrip.scrollBy({ left: dir * 180, behavior: 'smooth' });
+                            }
+                        }
+                    }">
                     
+                    <!-- Декоративный акцент -->
                     <div class="w-3 h-3 bg-amber-400 absolute top-0 right-0"></div>
 
-                    <!-- Картинка с ленивой загрузкой -->
-                    <div class="lg:col-span-5 order-2 lg:order-1">
-                        <div class="aspect-[4/3] rounded-xl overflow-hidden relative border border-slate-200 bg-slate-100">
-                            <template x-if="project.cover_image">
-                                <img 
-                                    :src="'/storage/' + project.cover_image" 
-                                    :alt="project.title" 
-                                    loading="lazy"
-                                    decoding="async"
-                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out">
+                    <!-- Картинка + Галерея скриншотов с полноэкранным слайдером -->
+                    <div class="lg:col-span-5 order-2 lg:order-1 flex flex-col gap-3">
+                        
+                        <!-- Главная обложка с яркой рамкой -->
+                        <div class="aspect-[4/3] rounded-xl overflow-hidden relative border-2 border-slate-300 hover:border-amber-400 shadow-md bg-slate-100 group/cover transition-colors duration-200">
+                            <template x-if="allImages.length > 0">
+                                <div class="w-full h-full relative cursor-pointer" @click="openModal(0)">
+                                    <img 
+                                        :src="'/storage/' + allImages[0]" 
+                                        :alt="project.title" 
+                                        loading="lazy"
+                                        decoding="async"
+                                        class="w-full h-full object-cover group-hover/cover:scale-105 transition-transform duration-300">
+                                    
+                                    <!-- Индикатор количества фото -->
+                                    <template x-if="allImages.length > 1">
+                                        <span class="absolute bottom-3 right-3 bg-slate-950/80 text-white backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] font-medium flex items-center gap-1.5 shadow-md border border-slate-700">
+                                            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                            </svg>
+                                            <span x-text="'1 / ' + allImages.length"></span>
+                                        </span>
+                                    </template>
+                                </div>
                             </template>
-                            <template x-if="!project.cover_image">
+                            <template x-if="allImages.length === 0">
                                 <div class="w-full h-full flex items-center justify-center text-slate-400 bg-slate-100">
                                     <span class="font-serif-title italic text-sm">Без обложки</span>
                                 </div>
                             </template>
                         </div>
+
+                        <!-- Пролистываемая лента скриншотов со стрелками прокрутки -->
+                        <template x-if="allImages.length > 1">
+                            <div class="relative flex items-center group/strip">
+                                <!-- Стрелка прокрутки влево -->
+                                <button 
+                                    @click="scrollGallery(-1)" 
+                                    type="button"
+                                    title="Прокрутить влево"
+                                    class="absolute -left-2 z-10 w-7 h-7 bg-slate-900/90 hover:bg-amber-400 hover:text-slate-950 text-white rounded-full flex items-center justify-center shadow-md backdrop-blur-sm border border-slate-700 transition-all cursor-pointer">
+                                    ‹
+                                </button>
+
+                                <!-- Контейнер с изображениями -->
+                                <div 
+                                    x-ref="galleryStrip"
+                                    class="flex items-center gap-2 overflow-x-auto py-1 px-4 no-scrollbar scroll-smooth w-full">
+                                    <template x-for="(img, idx) in allImages" :key="idx">
+                                        <button 
+                                            @click="openModal(idx)"
+                                            type="button"
+                                            class="flex-none w-16 h-12 rounded-lg overflow-hidden border-2 transition-all duration-200 cursor-pointer shadow-sm"
+                                            :class="idx === 0 ? 'border-amber-400 ring-1 ring-amber-400' : 'border-slate-300 hover:border-amber-400 opacity-80 hover:opacity-100'">
+                                            <img :src="'/storage/' + img" class="w-full h-full object-cover">
+                                        </button>
+                                    </template>
+                                </div>
+
+                                <!-- Стрелка прокрутки вправо -->
+                                <button 
+                                    @click="scrollGallery(1)" 
+                                    type="button"
+                                    title="Прокрутить вправо"
+                                    class="absolute -right-2 z-10 w-7 h-7 bg-slate-900/90 hover:bg-amber-400 hover:text-slate-950 text-white rounded-full flex items-center justify-center shadow-md backdrop-blur-sm border border-slate-700 transition-all cursor-pointer">
+                                    ›
+                                </button>
+                            </div>
+                        </template>
+
+                        <!-- Полноэкранный слайдер (Модальное окно с переключением фото) -->
+                        <template x-teleport="body">
+                            <div 
+                                x-show="modalIndex !== null" 
+                                x-cloak 
+                                @keydown.escape.window="closeModal()"
+                                @keydown.left.window="prevModal()"
+                                @keydown.right.window="nextModal()"
+                                class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/90 backdrop-blur-md"
+                                x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0"
+                                x-transition:enter-end="opacity-100"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100"
+                                x-transition:leave-end="opacity-0">
+                                
+                                <!-- Задний фон (клик для закрытия) -->
+                                <div class="absolute inset-0" @click="closeModal()"></div>
+
+                                <!-- Верхняя панель: Индикатор + Закрыть -->
+                                <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-20 max-w-6xl mx-auto px-2">
+                                    <div class="text-white text-xs font-semibold tracking-wider bg-slate-900/80 px-3.5 py-1.5 rounded-lg border border-slate-700 backdrop-blur-sm shadow-md">
+                                        Слайд <span class="text-amber-400 font-bold" x-text="(modalIndex ?? 0) + 1"></span> из <span x-text="allImages.length"></span>
+                                    </div>
+                                    <button 
+                                        @click="closeModal()" 
+                                        type="button"
+                                        class="text-white hover:text-amber-400 font-bold text-xs uppercase tracking-wider bg-slate-900/80 hover:bg-slate-800 px-4 py-2 rounded-lg border border-slate-700 transition-all cursor-pointer backdrop-blur-sm shadow-md">
+                                        Закрыть ✕
+                                    </button>
+                                </div>
+
+                                <!-- Стрелка НАЗАД -->
+                                <template x-if="allImages.length > 1">
+                                    <button 
+                                        @click="prevModal()" 
+                                        type="button"
+                                        title="Предыдущее фото (←)"
+                                        class="absolute left-3 sm:left-8 z-20 w-12 h-12 sm:w-14 sm:h-14 bg-slate-900/80 hover:bg-amber-400 hover:text-slate-950 text-white rounded-full flex items-center justify-center text-3xl font-bold shadow-2xl border border-slate-700 transition-all cursor-pointer backdrop-blur-sm select-none">
+                                        ‹
+                                    </button>
+                                </template>
+
+                                <!-- Основное изображение -->
+                                <div class="relative max-w-5xl max-h-[85vh] z-10 p-2 flex flex-col items-center">
+                                    <img 
+                                        :src="modalIndex !== null ? '/storage/' + allImages[modalIndex] : ''" 
+                                        class="max-w-full max-h-[80vh] rounded-xl shadow-2xl object-contain border-2 border-slate-700/80">
+                                </div>
+
+                                <!-- Стрелка ВПЕРЕД -->
+                                <template x-if="allImages.length > 1">
+                                    <button 
+                                        @click="nextModal()" 
+                                        type="button"
+                                        title="Следующее фото (→)"
+                                        class="absolute right-3 sm:right-8 z-20 w-12 h-12 sm:w-14 sm:h-14 bg-slate-900/80 hover:bg-amber-400 hover:text-slate-950 text-white rounded-full flex items-center justify-center text-3xl font-bold shadow-2xl border border-slate-700 transition-all cursor-pointer backdrop-blur-sm select-none">
+                                        ›
+                                    </button>
+                                </template>
+
+                            </div>
+                        </template>
+
                     </div>
 
-                    <!-- Контент -->
+                    <!-- Описание и кнопка (справа) -->
                     <div class="lg:col-span-7 order-1 lg:order-2 flex flex-col justify-between h-full">
                         <div>
+                            <!-- Бейджи: Сфера и Год -->
                             <div class="flex items-center gap-2 mb-4">
                                 <span x-text="project.sphere" class="bg-amber-400/15 text-slate-900 border border-amber-400/30 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md"></span>
                                 <span x-text="project.year" class="bg-slate-100 text-slate-600 border border-slate-200 text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md"></span>
                             </div>
                             
+                            <!-- Название проекта -->
                             <h3 x-text="project.title" class="font-serif-title text-2xl sm:text-3xl text-slate-900 font-semibold mb-4 group-hover:text-amber-600 transition-colors"></h3>
                             
-                            <p x-text="project.description" class="text-slate-600 text-sm sm:text-base leading-relaxed whitespace-pre-line mb-6 font-normal"></p>
+                            <!-- Вывод WYSIWYG текста -->
+                            <div x-html="project.description" class="text-slate-600 text-sm sm:text-base leading-relaxed mb-6 space-y-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-6 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-6 [&_strong]:font-semibold [&_strong]:text-slate-900 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-slate-900 [&_h2]:mt-7 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-slate-900 [&_h3]:mt-7 [&_h3]:mb-2 [&_p]:mt-4"></div>
                         </div>
 
+                        <!-- Кнопка перехода -->
                         <template x-if="project.project_url">
                             <div>
-                                <a :href="project.project_url" target="_blank" rel="noopener" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider bg-amber-400 hover:bg-amber-500 text-slate-950 px-5 py-2.5 rounded-lg transition-all duration-200 shadow-sm">
+                                <a :href="project.project_url" target="_blank" rel="noopener" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider bg-amber-400 hover:bg-amber-500 text-slate-950 px-5 py-2.5 rounded-lg transition-all duration-200 shadow-sm hover:shadow">
                                     Перейти на сайт <span>→</span>
                                 </a>
                             </div>

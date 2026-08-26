@@ -4,6 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProjectResource\Pages;
 use App\Models\Project;
+use App\Models\Sphere;
+use App\Models\Year;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -18,6 +20,7 @@ class ProjectResource extends Resource
     protected static ?string $navigationLabel = 'Проекты';
     protected static ?string $modelLabel = 'проект';
     protected static ?string $pluralModelLabel = 'Проекты';
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -28,34 +31,59 @@ class ProjectResource extends Resource
                     ->label('Название проекта')
                     ->placeholder('Например: Ребрендинг E-commerce платформы'),
 
-                Forms\Components\TextInput::make('sphere')
-                    ->required()
+                Forms\Components\Select::make('sphere')
                     ->label('Сфера / Отрасль')
-                    ->placeholder('Например: E-commerce, Недвижимость, FinTech'),
-
-                Forms\Components\TextInput::make('year')
-                    ->numeric()
+                    ->options(Sphere::pluck('name', 'name'))
+                    ->searchable()
                     ->required()
+                    ->createOptionForm([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Название сферы')
+                            ->required(),
+                    ])
+                    ->createOptionUsing(function (array $data) {
+                        return Sphere::create($data)->name;
+                    }),
+
+                Forms\Components\Select::make('year')
                     ->label('Год реализации')
-                    ->placeholder('2025'),
+                    ->options(Year::pluck('name', 'name'))
+                    ->searchable()
+                    ->required()
+                    ->createOptionForm([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Год')
+                            ->required(),
+                    ])
+                    ->createOptionUsing(function (array $data) {
+                        return Year::create($data)->name;
+                    }),
 
                 Forms\Components\FileUpload::make('cover_image')
                     ->image()
                     ->disk('public')
                     ->directory('projects')
-                    ->label('Обложка проекта'),
+                    ->label('Главная обложка проекта'),
+
+                Forms\Components\FileUpload::make('gallery')
+                    ->label('Дополнительные скриншоты (галерея)')
+                    ->multiple()
+                    ->reorderable()
+                    ->image()
+                    ->disk('public')
+                    ->directory('projects/gallery')
+                    ->columnSpanFull(),
 
                 Forms\Components\TextInput::make('project_url')
                     ->url()
                     ->label('Ссылка на готовый проект')
                     ->placeholder('https://example.com'),
 
-                Forms\Components\Textarea::make('description')
-                    ->required()
-                    ->columnSpanFull()
-                    ->rows(4)
+                Forms\Components\RichEditor::make('description')
                     ->label('Описание задач и результатов')
-                    ->placeholder('Какая задача стояла перед командой, ваши действия в роли руководителя и итоговый бизнес-результат...'),
+                    ->placeholder('Какая задача стояла перед командой, ваши действия в роли руководителя и итоговый бизнес-результат...')
+                    ->required()
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -80,7 +108,8 @@ class ProjectResource extends Resource
                     ->sortable()
                     ->label('Год'),
             ])
-            ->defaultSort('year', 'desc');
+            ->reorderable('sort')
+            ->defaultSort('sort', 'asc');
     }
 
     public static function getRelations(): array
