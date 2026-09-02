@@ -79,17 +79,15 @@ class ProjectResource extends Resource
                     ->label('Описание')
                     ->columnSpanFull(),
 
-                Forms\Components\Repeater::make('gallery')
-                    ->label('Галерея (перетаскивайте карточки для порядка)')
-                    ->schema([
-                        Forms\Components\FileUpload::make('image')
-                            ->label('Фото')
-                            ->image()
-                            ->directory('projects/gallery')
-                    ])
-                    ->grid(4)
+                Forms\Components\FileUpload::make('gallery')
+                    ->label('Галерея (выделяйте сразу много фото и перетаскивайте для порядка)')
+                    ->multiple()
                     ->reorderable()
-                    ->addActionLabel('+ Добавить фото')
+                    ->image()
+                    ->directory('projects/gallery')
+                    ->panelLayout('grid')
+                    ->openable()
+                    ->downloadable()
                     ->columnSpanFull(),
             ]);
     }

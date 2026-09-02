@@ -15,35 +15,45 @@ class Project extends Model
         'gallery' => 'array',
     ];
 
-    public function getGalleryAttribute($value)
+    protected $appends = [
+        'cover_url',
+        'gallery_urls',
+    ];
+
+    public function getCoverUrlAttribute(): ?string
     {
-        if (empty($value)) {
+        if (empty($this->cover_image)) {
+            return null;
+        }
+
+        if (str_starts_with($this->cover_image, 'http')) {
+            return $this->cover_image;
+        }
+
+        return asset('storage/' . ltrim($this->cover_image, '/'));
+    }
+
+    public function getGalleryUrlsAttribute(): array
+    {
+        $gallery = $this->gallery;
+
+        if (is_string($gallery)) {
+            $gallery = json_decode($gallery, true) ?? [];
+        }
+
+        if (!is_array($gallery)) {
             return [];
         }
 
-        $data = is_string($value) ? json_decode($value, true) : $value;
-        if (!is_array($data)) {
-            return [];
-        }
-
-        $formatted = [];
-        foreach ($data as $item) {
-            if (is_string($item)) {
-                $formatted[] = ['image' => $item];
-            } elseif (is_array($item)) {
-                $formatted[] = $item;
+        $urls = [];
+        foreach ($gallery as $item) {
+            $path = is_array($item) ? ($item['image'] ?? null) : (is_string($item) ? $item : null);
+            if (!empty($path)) {
+                $urls[] = str_starts_with($path, 'http') ? $path : asset('storage/' . ltrim($path, '/'));
             }
         }
 
-        return $formatted;
-    }
-
-    public function setGalleryAttribute($value)
-    {
-        if (is_array($value)) {
-            $this->attributes['gallery'] = json_encode(array_values($value));
-        } else {
-            $this->attributes['gallery'] = json_encode([]);
-        }
+        // Переворачиваем массив для совпадения порядка с сайтом
+        return array_reverse(array_values($urls));
     }
 }

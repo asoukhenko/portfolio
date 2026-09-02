@@ -31,27 +31,7 @@
         $coverUrl = $normalizeUrl($rawCover);
 
         // Галерея
-        $rawGallery = $project->gallery ?? ($p['gallery'] ?? []);
-        if (is_string($rawGallery)) {
-            $rawGallery = json_decode($rawGallery, true);
-        }
-        if (!is_array($rawGallery)) {
-            $rawGallery = [];
-        }
-
-        $galleryUrls = [];
-        foreach (array_values($rawGallery) as $item) {
-            if (is_array($item) && isset($item['image'])) {
-                $item = $item['image'];
-            }
-            $url = $normalizeUrl($item);
-            if ($url) {
-                $galleryUrls[] = $url;
-            }
-        }
-
-        $p['cover_url'] = $coverUrl;
-        $p['gallery_urls'] = $galleryUrls;
+        $p['gallery_urls'] = $project->gallery_urls;
         $p['sphere'] = isset($p['sphere']) ? trim((string)$p['sphere']) : '';
         $p['year'] = isset($p['year']) ? trim((string)$p['year']) : '';
         $p['project_url'] = $project->project_url ?? ($p['project_url'] ?? ($project->url ?? ($p['url'] ?? null)));
