@@ -16,4 +16,15 @@ class EditProject extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    protected function getFormActions(): array
+    {
+        return [
+            ...parent::getFormActions(),
+            Actions\Action::make('backToList')
+                ->label('К списку')
+                ->url(static::getResource()::getUrl('index'))
+                ->color('gray'),
+        ];
+    }
 }

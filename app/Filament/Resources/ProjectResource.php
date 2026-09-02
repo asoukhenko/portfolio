@@ -5,12 +5,12 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ProjectResource\Pages;
 use App\Models\Project;
 use App\Models\Sphere;
-use App\Models\Year;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Schema;
 
 class ProjectResource extends Resource
 {
@@ -18,71 +18,78 @@ class ProjectResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
     protected static ?string $navigationLabel = 'Проекты';
-    protected static ?string $modelLabel = 'проект';
+    protected static ?string $modelLabel = 'Проект';
     protected static ?string $pluralModelLabel = 'Проекты';
-    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\TextInput::make('title')
-                    ->required()
                     ->label('Название проекта')
-                    ->placeholder('Например: Ребрендинг E-commerce платформы'),
+                    ->required(),
 
                 Forms\Components\Select::make('sphere')
-                    ->label('Сфера / Отрасль')
-                    ->options(Sphere::pluck('name', 'name'))
-                    ->searchable()
-                    ->required()
-                    ->createOptionForm([
-                        Forms\Components\TextInput::make('name')
-                            ->label('Название сферы')
-                            ->required(),
-                    ])
-                    ->createOptionUsing(function (array $data) {
-                        return Sphere::create($data)->name;
-                    }),
+                    ->label('Сфера')
+                    ->options(function () {
+                        $col = Schema::hasColumn('spheres', 'name') ? 'name' : 'title';
+                        
+                        $spheresList = Sphere::query()
+                            ->whereNotNull($col)
+                            ->pluck($col, $col)
+                            ->toArray();
+
+                        $projectSpheres = Project::query()
+                            ->whereNotNull('sphere')
+                            ->where('sphere', '!=', '')
+                            ->pluck('sphere', 'sphere')
+                            ->toArray();
+
+                        return array_unique(array_merge($spheresList, $projectSpheres));
+                    })
+                    ->searchable(),
 
                 Forms\Components\Select::make('year')
-                    ->label('Год реализации')
-                    ->options(Year::pluck('name', 'name'))
+                    ->label('Год')
+                    ->options(function () {
+                        return Project::query()
+                            ->whereNotNull('year')
+                            ->where('year', '!=', '')
+                            ->pluck('year', 'year')
+                            ->unique()
+                            ->toArray();
+                    })
                     ->searchable()
-                    ->required()
                     ->createOptionForm([
-                        Forms\Components\TextInput::make('name')
-                            ->label('Год')
+                        Forms\Components\TextInput::make('year')
+                            ->label('Новый год')
                             ->required(),
                     ])
-                    ->createOptionUsing(function (array $data) {
-                        return Year::create($data)->name;
-                    }),
-
-                Forms\Components\FileUpload::make('cover_image')
-                    ->image()
-                    ->disk('public')
-                    ->directory('projects')
-                    ->label('Главная обложка проекта'),
-
-                Forms\Components\FileUpload::make('gallery')
-                    ->label('Дополнительные скриншоты (галерея)')
-                    ->multiple()
-                    ->reorderable()
-                    ->image()
-                    ->disk('public')
-                    ->directory('projects/gallery')
-                    ->columnSpanFull(),
+                    ->createOptionUsing(fn (array $data) => $data['year']),
 
                 Forms\Components\TextInput::make('project_url')
-                    ->url()
-                    ->label('Ссылка на готовый проект')
-                    ->placeholder('https://example.com'),
+                    ->label('Ссылка на сайт'),
+
+                Forms\Components\FileUpload::make('cover_image')
+                    ->label('Обложка')
+                    ->image()
+                    ->directory('projects/covers'),
 
                 Forms\Components\RichEditor::make('description')
-                    ->label('Описание задач и результатов')
-                    ->placeholder('Какая задача стояла перед командой, ваши действия в роли руководителя и итоговый бизнес-результат...')
-                    ->required()
+                    ->label('Описание')
+                    ->columnSpanFull(),
+
+                Forms\Components\Repeater::make('gallery')
+                    ->label('Галерея (перетаскивайте карточки для порядка)')
+                    ->schema([
+                        Forms\Components\FileUpload::make('image')
+                            ->label('Фото')
+                            ->image()
+                            ->directory('projects/gallery')
+                    ])
+                    ->grid(4)
+                    ->reorderable()
+                    ->addActionLabel('+ Добавить фото')
                     ->columnSpanFull(),
             ]);
     }
@@ -91,30 +98,18 @@ class ProjectResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('cover_image')
-                    ->label('Обложка'),
-
-                Tables\Columns\TextColumn::make('title')
-                    ->searchable()
-                    ->sortable()
-                    ->label('Название'),
-
-                Tables\Columns\TextColumn::make('sphere')
-                    ->badge()
-                    ->sortable()
-                    ->label('Сфера'),
-
-                Tables\Columns\TextColumn::make('year')
-                    ->sortable()
-                    ->label('Год'),
+                Tables\Columns\ImageColumn::make('cover_image')->label('Обложка'),
+                Tables\Columns\TextColumn::make('title')->label('Название')->searchable(),
+                Tables\Columns\TextColumn::make('sphere')->label('Сфера'),
+                Tables\Columns\TextColumn::make('year')->label('Год'),
             ])
-            ->reorderable('sort')
-            ->defaultSort('sort', 'asc');
-    }
-
-    public static function getRelations(): array
-    {
-        return [];
+            ->filters([
+                //
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+            ]);
     }
 
     public static function getPages(): array
