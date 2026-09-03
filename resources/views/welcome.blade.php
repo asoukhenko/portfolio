@@ -182,9 +182,10 @@
 
             <div class="space-y-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm">
                 <!-- ФИЛЬТР ПО СФЕРАМ -->
-                <div class="flex flex-wrap items-center gap-2">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 mr-2 min-w-[60px]">Сфера:</span>
-                    <button 
+                <div class="flex  items-start gap-2">
+    <span class="w-20 shrink-0 pt-1.5 text-xs font-bold uppercase tracking-wider text-slate-400 mr-2 min-w-[60px]">Сфера:</span>
+    <div class="flex-1 flex flex-wrap items-center gap-2">
+        <button 
                         @click="setSphere('all')" 
                         :class="selectedSphere === 'all' ? 'bg-amber-400 text-slate-950 font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium'"
                         class="px-3.5 py-1.5 text-xs rounded-lg transition-all duration-200 cursor-pointer">
@@ -198,12 +199,14 @@
                         {{ $sItem }}
                     </button>
                     @endforeach
-                </div>
+    </div>
+</div>
 
                 <!-- ФИЛЬТР ПО ГОДАМ -->
-                <div class="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 mr-2 min-w-[60px]">Год:</span>
-                    <button 
+                <div class="flex  items-start gap-2 border-t border-slate-100 pt-3">
+    <span class="w-20 shrink-0 pt-1.5 text-xs font-bold uppercase tracking-wider text-slate-400 mr-2 min-w-[60px]">Год:</span>
+    <div class="flex-1 flex flex-wrap items-center gap-2">
+        <button 
                         @click="setYear('all')" 
                         :class="selectedYear === 'all' ? 'bg-amber-400 text-slate-950 font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium'"
                         class="px-3.5 py-1.5 text-xs rounded-lg transition-all duration-200 cursor-pointer">
@@ -217,7 +220,8 @@
                         {{ $yItem }}
                     </button>
                     @endforeach
-                </div>
+    </div>
+</div>
             </div>
         </div>
 

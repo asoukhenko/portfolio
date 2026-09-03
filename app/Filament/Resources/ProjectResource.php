@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProjectResource\Pages;
 use App\Models\Project;
-use App\Models\Sphere;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -32,32 +31,51 @@ class ProjectResource extends Resource
                 Forms\Components\Select::make('sphere')
                     ->label('Сфера')
                     ->options(function () {
-                        $col = Schema::hasColumn('spheres', 'name') ? 'name' : 'title';
-                        
-                        $spheresList = Sphere::query()
-                            ->whereNotNull($col)
-                            ->pluck($col, $col)
-                            ->toArray();
+                        $fromSpheres = [];
+                        if (class_exists(\App\Models\Sphere::class) && Schema::hasTable('spheres')) {
+                            $col = Schema::hasColumn('spheres', 'name') ? 'name' : (Schema::hasColumn('spheres', 'title') ? 'title' : 'sphere');
+                            $fromSpheres = \App\Models\Sphere::query()
+                                ->whereNotNull($col)
+                                ->where($col, '!=', '')
+                                ->pluck($col)
+                                ->toArray();
+                        }
 
-                        $projectSpheres = Project::query()
+                        $fromProjects = Project::query()
                             ->whereNotNull('sphere')
                             ->where('sphere', '!=', '')
-                            ->pluck('sphere', 'sphere')
+                            ->pluck('sphere')
                             ->toArray();
 
-                        return array_unique(array_merge($spheresList, $projectSpheres));
+                        $all = array_filter(array_unique(array_merge($fromSpheres, $fromProjects)));
+                        sort($all);
+
+                        return empty($all) ? [] : array_combine($all, $all);
                     })
                     ->searchable(),
 
                 Forms\Components\Select::make('year')
                     ->label('Год')
                     ->options(function () {
-                        return Project::query()
+                        $fromYears = [];
+                        if (class_exists(\App\Models\Year::class) && Schema::hasTable('years')) {
+                            $fromYears = \App\Models\Year::query()
+                                ->whereNotNull('name')
+                                ->where('name', '!=', '')
+                                ->pluck('name')
+                                ->toArray();
+                        }
+
+                        $fromProjects = Project::query()
                             ->whereNotNull('year')
                             ->where('year', '!=', '')
-                            ->pluck('year', 'year')
-                            ->unique()
+                            ->pluck('year')
                             ->toArray();
+
+                        $all = array_filter(array_unique(array_merge($fromYears, $fromProjects)));
+                        rsort($all); // Сортировка по убыванию (2025, 2024, 2023...)
+
+                        return empty($all) ? [] : array_combine($all, $all);
                     })
                     ->searchable()
                     ->createOptionForm([
@@ -80,12 +98,11 @@ class ProjectResource extends Resource
                     ->columnSpanFull(),
 
                 Forms\Components\FileUpload::make('gallery')
-                    ->label('Галерея (выделяйте сразу много фото и перетаскивайте для порядка)')
+                    ->label('Галерея')
                     ->multiple()
                     ->reorderable()
                     ->image()
                     ->directory('projects/gallery')
-                    ->panelLayout('grid')
                     ->openable()
                     ->downloadable()
                     ->columnSpanFull(),
