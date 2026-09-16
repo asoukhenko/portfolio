@@ -73,7 +73,7 @@ class ProjectResource extends Resource
                             ->toArray();
 
                         $all = array_filter(array_unique(array_merge($fromYears, $fromProjects)));
-                        rsort($all); // Сортировка по убыванию (2025, 2024, 2023...)
+                        rsort($all);
 
                         return empty($all) ? [] : array_combine($all, $all);
                     })
@@ -112,11 +112,18 @@ class ProjectResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->reorderable('sort')
+            ->defaultSort('sort', 'asc')
             ->columns([
-                Tables\Columns\ImageColumn::make('cover_image')->label('Обложка'),
-                Tables\Columns\TextColumn::make('title')->label('Название')->searchable(),
-                Tables\Columns\TextColumn::make('sphere')->label('Сфера'),
-                Tables\Columns\TextColumn::make('year')->label('Год'),
+                Tables\Columns\ImageColumn::make('cover_image')
+                    ->label('Обложка'),
+                Tables\Columns\TextColumn::make('title')
+                    ->label('Название')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('sphere')
+                    ->label('Сфера'),
+                Tables\Columns\TextColumn::make('year')
+                    ->label('Год'),
             ])
             ->filters([
                 //
